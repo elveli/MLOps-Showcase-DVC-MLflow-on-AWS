@@ -107,6 +107,29 @@ Navigate your browser to `http://127.0.0.1:8080`. Inside, you will see your `aws
 
 ---
 
+## 🧭 4. Exploring the MLflow UI
+
+Now that you have the UI open, here are the key features you can interact with to manage your machine learning lifecycle:
+
+**1. Compare Experiment Runs**
+* In the left sidebar under "Experiments", click `aws_dvc_mlflow_showcase`. You'll see a table of your `train.py` runs. 
+* **Try this:** Stop the server, run `python train.py --n-estimators 200 --max-depth 10`, and restart the UI. Select multiple runs using the checkboxes on the left and click **"Compare"**. You'll get visualization tools (like parallel coordinate plots and scatter plots) to see how tuning hyperparameters affected your accuracy.
+
+**2. Verify S3 Cloud Artifacts**
+* Click on the timestamp link of a specific run to open its detail page. Scroll down to the **Artifacts** section. 
+* Expand the `random_forest_model/` folder. You will see MLflow automatically generated a `conda.yaml`, `requirements.txt`, `MLmodel` schema, and the `model.pkl` binary. 
+* Because of our infrastructure pipeline, viewing these files in the UI actually streams them down securely from your **Terraform-provisioned AWS S3 bucket**, rather than your local hard drive!
+
+**3. Trace Data Lineage (Git + DVC)**
+* In the run details, under the **Parameters** section, look for `git_commit`. 
+* This hash directly links this exact model run to the specific DVC-tracked `dataset.csv` state in your git repository, ensuring 100% reproducibility.
+
+**4. The Model Registry Lifecycle**
+* Click the **"Models"** tab at the top of the UI. You'll see `Remote_Wine_Quality_RF`. 
+* Click into it, and you'll see "Version 1". You can manually transition models across their lifecycle states using the dropdown menu: `None` -> `Staging` -> `Production` -> `Archived`. In a real MLOps pipeline, CI/CD tools query this registry to know which model version to deploy to production.
+
+---
+
 ## 🛠️ Troubleshooting
 
 **1. `ERROR: output '...' is already tracked by SCM (e.g. Git).`**
