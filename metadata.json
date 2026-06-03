@@ -1,0 +1,6 @@
+{
+  "name": "MLOps Showcase: DVC & MLflow on AWS",
+  "description": "Boilerplate and documentation for setting up DVC and MLflow with AWS S3 storage provisioned via Terraform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
