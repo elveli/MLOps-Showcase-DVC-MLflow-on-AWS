@@ -96,13 +96,14 @@ python train.py --n-estimators 100 --max-depth 5
 
 ## 📊 3. View the Results
 
-Now you can spin up the MLflow Tracking UI to verify the experiment metrics and see the remote AWS model registry.
+Now you can spin up the MLflow Tracking UI to verify the experiment metrics and see the remote AWS model registry. 
+*(Note: We use port 8080 because port 5000 is often reserved by macOS for the AirPlay Receiver, which causes 403 Forbidden errors).*
 
 ```bash
-mlflow ui --backend-store-uri sqlite:///mlflow.db --default-artifact-root s3://<YOUR_MLFLOW_ARTIFACTS_BUCKET_NAME>/
+mlflow ui --backend-store-uri sqlite:///mlflow.db --default-artifact-root s3://<YOUR_MLFLOW_ARTIFACTS_BUCKET_NAME>/ --port 8080
 ```
 
-Navigate your browser to `http://127.0.0.1:5000`. Inside, you will see your `aws_dvc_mlflow_showcase` experiment, complete with accuracy, precision, hyperparameters, and the actual model artifacts securely fetched natively from your AWS S3 buckets!
+Navigate your browser to `http://127.0.0.1:8080`. Inside, you will see your `aws_dvc_mlflow_showcase` experiment, complete with accuracy, precision, hyperparameters, and the actual model artifacts securely fetched natively from your AWS S3 buckets!
 
 ---
 
@@ -126,4 +127,12 @@ pip install "dvc[s3]"
 Then, execute the `dvc` binary directly from that environment's bin folder to bypass any globally installed DVC:
 ```bash
 $(dirname $(which python))/dvc push
+```
+
+**3. `HTTP ERROR 403: Access to 127.0.0.1 was denied` on port 5000**
+If you try to open the MLflow UI at `http://127.0.0.1:5000` on newer macOS versions and get a 403 error, you are not hitting MLflow. You are actually hitting the Apple AirPlay Receiver, which defaults to listening on port 5000. 
+**Solution:**
+Pass a different port to the `mlflow ui` command using the `--port` flag:
+```bash
+mlflow ui --backend-store-uri sqlite:///mlflow.db --port 8080
 ```
