@@ -73,7 +73,15 @@ dvc push
 ```
 
 ### Running the MLflow Training Pipeline
-Start the training run. Inside `train.py`, MLFlow connects to S3 to log the serialized `RandomForestClassifier`.
+Inside `train.py`, a Random Forest model is trained, and MLFlow tracks the experiment metrics and registers the model to S3. 
+
+#### What exactly does `train.py` do?
+1. **Configures MLflow**: Sets up a local SQLite database (`mlflow.db`) to track lightweight metadata (metrics, parameters) but relies on S3 to store the heavy serialized model artifacts (like `.pkl` files).
+2. **Data Lineage (Code + Data)**: Attempts to grab the current `git rev-parse HEAD` (git commit hash) and log it to MLflow. Assuming your data is tracked by DVC in the same git commit, this creates a perfect link between the model and the exact snapshot of data and code used to produce it.
+3. **Data Loading & Splitting**: Loads `dataset.csv` (which you just pulled via DVC) and splits it into training and testing sets.
+4. **Model Training**: Trains a `RandomForestClassifier` using parameters passed via CLI (`--n-estimators` and `--max-depth`).
+5. **Metric Logging**: Evaluates predictions and logs hyperparameters, `accuracy`, and `precision` back to the MLflow tracking server.
+6. **Model Artifact Registration**: Uses `mlflow.sklearn.log_model()` to package the trained model and seamlessly upload the binary artifact directly into your AWS S3 bucket using boto3 under the hood.
 
 ```bash
 # Provide MLFlow the S3 bucket artifact destination before running
@@ -109,9 +117,13 @@ dvc add path/to/dataset.csv
 ```
 
 **2. `ERROR: unexpected error - s3 is supported, but requires 'dvc-s3' to be installed`**
-If you ran `pip install dvc-s3` but `dvc push` still throws this error, it means the `dvc` command on your system `PATH` (e.g., installed via Homebrew or apt) is detached from your Python virtual environment. 
+If you ran `pip install dvc-s3` or `pip install dvc[s3]` but `dvc push` still throws this error, it means the `dvc` command you are executing is coming from a global installation (like Homebrew) which is completely isolated from your Python environment.
 **Solution:**
-Force your Python environment to run DVC by prefixing commands with `python -m`:
+Ensure you install DVC and the plugin together in your active Python environment:
 ```bash
-python -m dvc push
+pip install "dvc[s3]"
+```
+Then, execute the `dvc` binary directly from that environment's bin folder to bypass any globally installed DVC:
+```bash
+$(dirname $(which python))/dvc push
 ```
