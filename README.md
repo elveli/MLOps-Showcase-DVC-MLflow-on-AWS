@@ -54,16 +54,21 @@ pip install -r requirements.txt
 Link your local DVC structure to the S3 bucket created by Terraform.
 
 ```bash
-# Initialize DVC if not already
+# Initialize DVC at the ROOT of your git repository
 dvc init
 
 # Set the remote S3 bucket (replace with your Terraform output bucket)
 dvc remote add -d aws-s3 s3://<YOUR_DVC_BUCKET_NAME>
 
-# Track the dataset
-dvc add data/dataset.csv
+# If dataset.csv is already tracked by git, you must untrack it first!
+git rm -r --cached ml-pipeline/data/dataset.csv
+git commit -m "Untrack dataset.csv for DVC"
+
+# Track the dataset with DVC
+dvc add ml-pipeline/data/dataset.csv
 
 # Push data to AWS S3
+# Note: If you get a "No module named 'dvc_s3'" error, see the troubleshooting section below.
 dvc push
 ```
 
@@ -90,3 +95,23 @@ mlflow ui --backend-store-uri sqlite:///mlflow.db --default-artifact-root s3://<
 ```
 
 Navigate your browser to `http://127.0.0.1:5000`. Inside, you will see your `aws_dvc_mlflow_showcase` experiment, complete with accuracy, precision, hyperparameters, and the actual model artifacts securely fetched natively from your AWS S3 buckets!
+
+---
+
+## 🛠️ Troubleshooting
+
+**1. `ERROR: output '...' is already tracked by SCM (e.g. Git).`**
+DVC cannot track a file that Git is already tracking. Stop tracking it in Git first (it won't delete the file, just removes it from the git index):
+```bash
+git rm -r --cached path/to/dataset.csv
+git commit -m "Stop tracking dataset"
+dvc add path/to/dataset.csv
+```
+
+**2. `ERROR: unexpected error - s3 is supported, but requires 'dvc-s3' to be installed`**
+If you ran `pip install dvc-s3` but `dvc push` still throws this error, it means the `dvc` command on your system `PATH` (e.g., installed via Homebrew or apt) is detached from your Python virtual environment. 
+**Solution:**
+Force your Python environment to run DVC by prefixing commands with `python -m`:
+```bash
+python -m dvc push
+```
